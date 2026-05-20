@@ -1,0 +1,11 @@
+langchain>=0.1.0
+langgraph>=0.0.10
+anthropic>=0.7.0
+python-dotenv>=1.0.0
+langchain-groq>=1.1.2
+fastapi>=0.136.1
+uvicorn>=0.47.0
+
+[dev]
+pytest>=7.0.0
+black>=23.0.0
