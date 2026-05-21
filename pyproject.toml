@@ -12,6 +12,7 @@ dependencies = [
     "langchain-groq>=1.1.2",
     "fastapi>=0.136.1",
     "uvicorn>=0.47.0",
+    "langgraph-checkpoint-postgres>=3.1.0",
 ]
 
 [project.optional-dependencies]
