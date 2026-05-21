@@ -13,6 +13,9 @@ dependencies = [
     "fastapi>=0.136.1",
     "uvicorn>=0.47.0",
     "langgraph-checkpoint-postgres>=3.1.0",
+    "langgraph-checkpoint-redis>=0.4.1",
+    "radis>=0.17",
+    "redis>=7.4.0",
 ]
 
 [project.optional-dependencies]

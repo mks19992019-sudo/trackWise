@@ -8,3 +8,8 @@ services:
     ports:
       - "5442:5432"
 
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
