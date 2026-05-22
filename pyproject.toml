@@ -16,6 +16,9 @@ dependencies = [
     "langgraph-checkpoint-redis>=0.4.1",
     "radis>=0.17",
     "redis>=7.4.0",
+    "langchain-qdrant>=1.1.0",
+    "langchain-huggingface>=1.2.2",
+    "qdrant-client>=1.18.0",
 ]
 
 [project.optional-dependencies]

@@ -15,6 +15,9 @@ Requires-Dist: langgraph-checkpoint-postgres>=3.1.0
 Requires-Dist: langgraph-checkpoint-redis>=0.4.1
 Requires-Dist: radis>=0.17
 Requires-Dist: redis>=7.4.0
+Requires-Dist: langchain-qdrant>=1.1.0
+Requires-Dist: langchain-huggingface>=1.2.2
+Requires-Dist: qdrant-client>=1.18.0
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0.0; extra == "dev"
 Requires-Dist: black>=23.0.0; extra == "dev"

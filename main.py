@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from graph import workflow
 from langchain_core.messages import HumanMessage
 from redis import Redis
+from decide import process_memory
 
 
 Redis_client = Redis(
@@ -32,12 +33,17 @@ def chat(msg:msg):
 
     session_key = f"session:{thread_id}"
 
+    process_memory(
+        thread_id,
+        user_msg
+    )
+
 
 
     # redis ttl code
     # session create / update
     Redis_client.set(
-        session_key , "active", ex=20
+        session_key ,'active' , ex=20
     )
 
 
