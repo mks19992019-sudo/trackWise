@@ -5,8 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 
 
 
-check_query_is_imp = ChatPromptTemplate(
-    '''
+check_query_is_imp = ChatPromptTemplate.from_template(
+    """
 
     You are a memory classification system for an AI assistant.
 
@@ -70,9 +70,88 @@ User Message:
 
 
 
-'''
+"""
 
 )
 
 
 
+check_to_store= ChatPromptTemplate.from_template("""
+You are a memory deduplication system.
+
+Your task is to determine whether the user's new message contains information that should be added to long-term memory.
+
+You will receive:
+
+1. The current user message.
+2. Existing memories retrieved from the vector database.
+
+Rules:
+
+- Return true if the user message contains new information that is not already present in the existing memories.
+- Return true if the message significantly updates or changes an existing memory.
+- Return false if the information is already known.
+- Return false if the message is semantically equivalent to an existing memory.
+- Return false if the message only rephrases information that already exists.
+- Compare meaning, not exact wording.
+- Be conservative and avoid storing duplicate memories.
+
+Examples:
+
+User Message:
+"My favorite programming language is Python"
+
+Existing Memories:
+- "User prefers Python for development"
+
+Output:
+False
+
+---
+
+User Message:
+"I am building a finance AI system"
+
+Existing Memories:
+- "User likes Python"
+
+Output:
+True
+
+---
+
+User Message:
+"I now prefer Go instead of Python"
+
+Existing Memories:
+- "User prefers Python for development"
+
+Output:
+True
+
+---
+
+User Message:
+"I use Redis for short term memory"
+
+Existing Memories:
+- "User uses Redis in AI projects"
+
+Output:
+False
+
+Return ONLY a boolean:
+
+True
+or
+False
+
+Current User Message:
+{query}
+
+Existing Memories:
+{memories}"""
+)
+
+prompt1= check_query_is_imp
+prompt2 = check_to_store

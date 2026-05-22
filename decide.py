@@ -8,7 +8,7 @@ from llm import model
 
 from pydantic import BaseModel 
 from typing import Literal
-from prompts import check_query_is_imp ,check_to_store
+from prompts import prompt1 , prompt2
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 
@@ -26,9 +26,9 @@ class check(BaseModel):
 
 struture_model = model.with_structured_output(check)
 
-chain = check_query_is_imp | struture_model
+chain = prompt1 | struture_model
 
-chain2 = check_to_store | struture_model
+chain2 = prompt2 | struture_model
 
 
 

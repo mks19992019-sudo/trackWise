@@ -1,10 +1,11 @@
 from llm import model
 from langchain.agents import create_agent
 from langgraph.graph  import MessagesState 
+from tool import serch_memory
 
 
 
-tools = []
+tools = [serch_memory]
 agents = create_agent(
         model = model,
         tools=tools,

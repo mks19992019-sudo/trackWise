@@ -19,6 +19,7 @@ dependencies = [
     "langchain-qdrant>=1.1.0",
     "langchain-huggingface>=1.2.2",
     "qdrant-client>=1.18.0",
+    "sentence-transformers>=5.5.1",
 ]
 
 [project.optional-dependencies]
