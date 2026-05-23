@@ -1,88 +1,384 @@
-# Finance AI System v2
+# AI Expense Tracker Agent
 
-A sophisticated AI assistant specialized in expense tracking and financial management, featuring a dual-memory architecture (Short-term and Long-term) for personalized user experiences.
+A production-oriented AI-powered expense tracking assistant built with FastAPI, LangGraph, PostgreSQL, Redis, Qdrant, and modern LLM tooling.
 
-## 🚀 Overview
+The system combines conversational AI, persistent memory, tool calling, and structured financial data management to help users track expenses, manage budgets, and gain insights through natural language interactions.
 
-This system leverages a state-of-the-art agentic workflow to manage financial data. It doesn't just answer questions; it remembers user preferences, goals, and habits across different sessions using a combination of Redis and Qdrant.
+---
 
-### Key Features
-- **Agentic Workflow**: Powered by LangGraph for complex state management.
-- **Short-Term Memory**: Implemented via Redis for fast session recovery and thread-based state persistence.
-- **Long-Term Memory**: Powered by Qdrant vector database to store and retrieve persistent user profile information.
-- **Intelligent Memory Filtering**: A dedicated decision layer (`decide.py`) that analyzes whether information is worth storing for the long term, preventing database clutter with trivial conversation.
-- **High-Performance LLM**: Integration with Groq for low-latency responses.
+## Features
 
-## 🛠️ Architecture
+### Expense Management
+
+- Add expenses using natural language
+- Update existing expenses
+- Delete expenses
+- Search expenses
+- Categorize spending
+- Monthly spending summaries
+- Budget creation and tracking
+- Financial insights and analytics
+
+### AI Agent Capabilities
+
+- Conversational expense management
+- Tool calling architecture
+- Multi-step reasoning workflow
+- Structured outputs
+- Context-aware responses
 
 ### Memory System
-- **L1 (Short-Term)**: `RedisSaver` in LangGraph manages the current conversation state. Session TTL is handled in `main.py` to manage active users.
-- **L2 (Long-Term)**: `QdrantVectorStore` stores embeddings of critical user information. The system uses a classification prompt (`prompts.py`) to decide if a message should be archived.
 
-### Component Breakdown
-- `main.py`: The entry point. A FastAPI server providing the `/chat` endpoint.
-- `graph.py`: The brain of the operation. Orchestrates the LangGraph state machine.
-- `agent.py`: Defines the agent's behavior, tools, and system persona ("Expense Tracker Expert").
-- `decide.py`: The logic for memory classification (True/False) to determine L2 storage.
-- `embeding.py`: Handles vectorization and connection to the Qdrant database.
-- `llm.py`: Central configuration for the underlying Large Language Model.
+#### Short-Term Memory
 
-## 📦 Installation & Setup
+- LangGraph checkpointing
+- Redis-backed conversation persistence
+- Session continuity
 
-### Prerequisites
-- Python 3.13+
-- Docker and Docker Compose
+#### Long-Term Memory
 
-### Quick Start
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd v2
-   ```
+- Qdrant vector database
+- Semantic memory retrieval
+- User preference storage
+- Personalized interactions
 
-2. **Start Infrastructure**
-   Launch Redis and Postgres containers:
-   ```bash
-   docker compose up -d
-   ```
-   *Note: Ensure Qdrant is also running on port 6333.*
+### Backend Architecture
 
-3. **Install Dependencies**
-   ```bash
-   uv sync
-   ```
+- FastAPI REST API
+- Async-first architecture
+- PostgreSQL persistence layer
+- Redis caching and checkpoints
+- Vector memory retrieval
+- Modular service design
 
-4. **Environment Configuration**
-   Create a `.env` file with your required API keys:
-   ```env
-   GROQ_API_KEY=your_key_here
-   ```
+---
 
-5. **Run the Application**
-   ```bash
-   uvicorn main:app --reload
-   ```
+## System Architecture
 
-## 📡 API Reference
+```text
+User
+ │
+ ▼
+FastAPI API Layer
+ │
+ ▼
+LangGraph Workflow
+ │
+ ├── Retrieval Memory Node
+ │
+ ├── AI Agent Node
+ │
+ └── Tool Execution Layer
+ │
+ ▼
+Business Services
+ │
+ ├── PostgreSQL
+ │
+ ├── Redis
+ │
+ └── Qdrant
+ │
+ ▼
+Response Generation
+ │
+ ▼
+User
+```
 
-### Chat Endpoint
-`POST /chat`
+---
 
-**Request Body:**
+## Tech Stack
+
+### Backend
+
+- FastAPI
+- Python 3.14
+- Pydantic
+
+### Agent Framework
+
+- LangGraph
+- LangChain
+- Create React Agent
+
+### Databases
+
+- PostgreSQL
+- Redis
+- Qdrant
+
+### AI Models
+
+- Groq
+- Llama Models
+- Compatible with OpenAI
+- Compatible with Anthropic
+
+### Infrastructure
+
+- Docker
+- Docker Compose
+- Async Architecture
+
+---
+
+## Project Structure
+
+```text
+app/
+│
+├── api/
+├── graph/
+├── agent/
+├── memory/
+├── tools/
+├── database/
+├── services/
+├── models/
+├── schemas/
+├── config/
+│
+├── main.py
+│
+tests/
+│
+docker/
+│
+README.md
+```
+
+---
+
+## Agent Workflow
+
+Current workflow:
+
+```text
+START
+ │
+ ▼
+retrieval_memory
+ │
+ ▼
+ai_agent
+ │
+ ▼
+END
+```
+
+Future workflow:
+
+```text
+START
+ │
+ ▼
+retrieval_memory
+ │
+ ▼
+decide_store_or_not
+ │
+ ▼
+ai_agent
+ │
+ ▼
+END
+```
+
+---
+
+## Memory Architecture
+
+### Short-Term Memory
+
+Purpose:
+
+- Preserve conversation state
+- Session continuity
+- Multi-turn reasoning
+
+Technology:
+
+- LangGraph Checkpointer
+- Redis
+
+### Long-Term Memory
+
+Purpose:
+
+- Store user preferences
+- Budget preferences
+- Financial goals
+- Important personal context
+
+Technology:
+
+- Qdrant Vector Database
+- Semantic Retrieval
+
+---
+
+## Getting Started
+
+### Clone Repository
+
+```bash
+git clone https://github.com/your-username/expense-tracker-agent.git
+
+cd expense-tracker-agent
+```
+
+### Create Virtual Environment
+
+```bash
+python -m venv .venv
+
+source .venv/bin/activate
+```
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Environment Variables
+
+Create a `.env` file:
+
+```env
+POSTGRES_URL=
+REDIS_URL=
+QDRANT_URL=
+QDRANT_API_KEY=
+
+GROQ_API_KEY=
+
+LANGCHAIN_API_KEY=
+LANGCHAIN_TRACING_V2=true
+```
+
+---
+
+## Run PostgreSQL
+
+```bash
+docker compose up -d postgres
+```
+
+---
+
+## Run Redis
+
+```bash
+docker compose up -d redis
+```
+
+---
+
+## Run Qdrant
+
+```bash
+docker compose up -d qdrant
+```
+
+---
+
+## Run Application
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Server:
+
+```text
+http://localhost:8000
+```
+
+Swagger:
+
+```text
+http://localhost:8000/docs
+```
+
+---
+
+## Example Request
+
 ```json
 {
-  "message": "I prefer tracking my expenses in USD",
-  "thread_id": "user_1234"
+  "thread_id": "user-123",
+  "message": "I spent 500 rupees on groceries today"
 }
 ```
 
-**Response:**
-`"The agent's response string"`
+Example Response:
 
-## 🛠️ Tech Stack
-- **Framework**: FastAPI
-- **Orchestration**: LangGraph / LangChain
-- **LLM**: Groq (GPT-OSS-120B)
-- **Vector DB**: Qdrant
-- **State Store**: Redis
-- **Embeddings**: HuggingFace (`BGE-base-en-v1.5`)
+```json
+{
+  "response": "I've recorded a grocery expense of ₹500."
+}
+```
+
+---
+
+## Testing
+
+Run tests:
+
+```bash
+pytest
+```
+
+Run coverage:
+
+```bash
+pytest --cov
+```
+
+---
+
+## Deployment
+
+Recommended:
+
+- Docker
+- Railway
+- Render
+- Fly.io
+- DigitalOcean
+- AWS ECS
+- Kubernetes
+
+---
+
+## Roadmap
+
+- [x] FastAPI backend
+- [x] LangGraph workflow
+- [x] Redis checkpointing
+- [x] Qdrant memory retrieval
+- [x] Async architecture
+- [ ] Budget analytics
+- [ ] Long-term memory classification
+- [ ] Financial recommendations
+- [ ] Multi-user dashboard
+- [ ] Notification system
+- [ ] Mobile integration
+
+---
+
+## License
+
+MIT License
+
+---
+
+## Author
+
+Mohit Kumar
+
+Building practical AI agents, memory systems, and intelligent automation workflows.
