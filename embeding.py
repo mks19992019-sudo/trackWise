@@ -17,19 +17,12 @@ client = QdrantClient(
 
 # before embeding we need to crete memories in qdrant 
 if not client.collection_exists("memories"):
-
     client.create_collection(
-
         collection_name="memories",
-
         vectors_config=VectorParams(
-
             size=768,
-
             distance=Distance.COSINE
-
         )
-
     )
 
 

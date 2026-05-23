@@ -6,12 +6,4 @@ load_dotenv()
 
 
 
-model = ChatGroq(model='openai/gpt-oss-120b')
-
-
-
-
-
-
-
-
+model = ChatGroq(model='llama-3.1-8b-instant')

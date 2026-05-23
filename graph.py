@@ -1,49 +1,34 @@
-from typing import TypedDict
-from langgraph.graph  import MessagesState ,START , StateGraph
+
+from langgraph.graph import  START, StateGraph
 from agent import agent
-from langchain_core.messages import HumanMessage
-#from langgraph.checkpoint.memory import InMemorySaver
-#from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.checkpoint.redis import RedisSaver
-from qdrant_client.models import Filter, FieldCondition, MatchValue
+from reterival import retrieval_memory
+from decide import decide_store_or_not
+from state import AgentState
 
 
-#dataBase_url = 'postgresql://postgres:postgres@localhost:5442/postgres'
 
-REDIS_URL = "redis://localhost:6379"
+
 
 
 # building graph
+graph = StateGraph(AgentState)
 
-grpah=StateGraph(MessagesState)
+# Add nodes
+graph.add_node('retrieval_memory', retrieval_memory)
+graph.add_node('decide_store_or_not', decide_store_or_not)
+graph.add_node('ai_agent', agent)
 
+# Add edges to create the flow: START -> retrieval_memory -> decide_store_or_not -> agent
+graph.add_edge(START, 'retrieval_memory')
+graph.add_edge('retrieval_memory', 'decide_store_or_not')
+graph.add_edge('decide_store_or_not', 'ai_agent')
 
-
-grpah.add_node('ai_agent',agent)
-
-grpah.add_edge(START,'ai_agent')
-
-#checkpointer_postgres = (PostgresSaver.from_conn_string(dataBase_url))
-
-
+# Configure checkpointer
+REDIS_URL = "redis://localhost:6379"
 checkpointer_redis = RedisSaver.from_conn_string(REDIS_URL)
-
-# first we open that the pakage using the enter 
-# like we open file with 'with f as f'
 checkpointer = checkpointer_redis.__enter__()
-
-#checkpointer = (checkpointer_postgres.__enter__())
-
 checkpointer.setup()
 
-
-
-
-workflow = grpah.compile(checkpointer=checkpointer)
-
-
-
-
-
-
-
+# Compile the workflow
+workflow = graph.compile(checkpointer=checkpointer)

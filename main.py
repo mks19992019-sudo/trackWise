@@ -32,14 +32,6 @@ def chat(msg:msg):
     user_msg= msg.message
 
     session_key = f"session:{thread_id}"
-
-    process_memory(
-        thread_id,
-        user_msg
-    )
-
-
-
     # redis ttl code
     # session create / update
     Redis_client.set(
@@ -47,8 +39,10 @@ def chat(msg:msg):
     )
 
 
+
     result = workflow.invoke({
-        'messages':[HumanMessage(content=user_msg)]
+        'messages':[HumanMessage(content=user_msg)],
+        'thread_id':thread_id
     },{"configurable": {"thread_id": thread_id}})
 
     return result['messages'][-1].content

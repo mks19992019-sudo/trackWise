@@ -1,25 +1,13 @@
-'''
-    Here we decide whether the user's query is stored in the long term memory or not. 
-
-'''
 
 from embeding import vector_store
 from llm import model
-
 from pydantic import BaseModel 
-from typing import Literal
 from prompts import prompt1 , prompt2
-from qdrant_client.models import Filter, FieldCondition, MatchValue
-
+from state import AgentState
 
 
 class check(BaseModel):
     ans : bool
-
-
-    
-
-
 
 
 # first check the user query is genully need to add in 
@@ -34,43 +22,30 @@ chain2 = prompt2 | struture_model
 
 # to check the user query to store or not return true or fale
 def check_store(query):
-    return chain.invoke({'query':query}).ans
+    
+    result = chain.invoke({'query':query})
+    print(result)
+    return result.ans
 
 # now we check this informetion is already present in vector data base or not 
 
-def check_database(id,query):
+def check_database(query,rerterival):
+
+    return chain2.invoke({"query": query,"memories": rerterival}).ans
+
+def decide_store_or_not(AgentState:AgentState):
+    query = AgentState["messages"][-1].content
+    Thread_id = AgentState["thread_id"]
+    reterival = AgentState["retrieved_memories"]
     
-
-    # sementic serch 
-    search = vector_store.similarity_search(query=query,k=5,filter=Filter(
-        must=[FieldCondition(
-            key="metadata.user_id",
-            match=MatchValue(
-                value=id
-            )
-
-        )]
-    ))
-
-    memories = ('\n'.join(doc.page_content for doc in search)
-                if search
-                else 'no memories found')
-
-    return chain2.invoke({"query": query,"memories": memories}).ans
-
-    
-
-
-def process_memory(id,query):
-
-
     if check_store(query):
-        if check_database(id,query):
+        if check_database(query,reterival):
+
             vector_store.add_texts(texts=[query],metadatas=[{
-                "user_id" : id
+                "user_id" : Thread_id
             }])
-        return 
-    return 
+        return {}
+    return {}
 
 
 
