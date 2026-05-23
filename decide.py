@@ -1,16 +1,16 @@
-
 from embeding import vector_store
 from llm import model
-from pydantic import BaseModel 
+from pydantic import BaseModel
 from prompts import prompt1 , prompt2
 from state import AgentState
 
 
 class check(BaseModel):
+    """Determine whether to store the user query in long-term memory."""
     ans : bool
 
 
-# first check the user query is genully need to add in 
+# first check the user query is genully need to add in
 
 struture_model = model.with_structured_output(check)
 
@@ -19,25 +19,24 @@ chain = prompt1 | struture_model
 chain2 = prompt2 | struture_model
 
 
-
 # to check the user query to store or not return true or fale
 def check_store(query):
-    
+    print("DEBUG: prompt1.input_variables:", prompt1.input_variables)
     result = chain.invoke({'query':query})
-    print(result)
+    print("DEBUG: result:", result)
     return result.ans
 
-# now we check this informetion is already present in vector data base or not 
+# now we check this informetion is already present in vector data base or not
 
 def check_database(query,rerterival):
-
+    print("DEBUG: prompt2.input_variables:", prompt2.input_variables)
     return chain2.invoke({"query": query,"memories": rerterival}).ans
 
 def decide_store_or_not(AgentState:AgentState):
     query = AgentState["messages"][-1].content
     Thread_id = AgentState["thread_id"]
     reterival = AgentState["retrieved_memories"]
-    
+
     if check_store(query):
         if check_database(query,reterival):
 
@@ -46,13 +45,3 @@ def decide_store_or_not(AgentState:AgentState):
             }])
         return {}
     return {}
-
-
-
-
-
-    
-    
-
-
-

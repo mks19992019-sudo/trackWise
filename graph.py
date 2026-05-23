@@ -6,11 +6,6 @@ from reterival import retrieval_memory
 from decide import decide_store_or_not
 from state import AgentState
 
-
-
-
-
-
 # building graph
 graph = StateGraph(AgentState)
 
