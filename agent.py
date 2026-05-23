@@ -1,33 +1,15 @@
-from llm import model
+import asyncio
+from datetime import datetime, timezone
+from functools import lru_cache
+
 from langchain.agents import create_agent
+from langchain_core.messages import BaseMessage, SystemMessage
+
+from llm import model
 from state import AgentState
-from langchain_core.messages import SystemMessage
+from tool import get_finance_tools, reset_active_user_id, set_active_user_id
 
-
-
-
-def agent(state:AgentState):
-
-
-    content = state['retrieved_memories']
-    messages = [SystemMessage(
-        content=f"""
-        Relevant User Context:
-        {content}
-    """ )
-
-    ] + state["messages"]
-
-    return agents.invoke({'messages' : messages})
-
-
-
-tools = []
-agents = create_agent(
-        model = model,
-        tools=tools,
-        system_prompt="""
-
+AGENT_SYSTEM_PROMPT = """
 You are an intelligent personal expense tracking assistant.
 
 Your responsibilities:
@@ -78,6 +60,71 @@ Response Style:
 
 - Concise unless detailed explanation is requested
 
+Tool Rules:
+
+- The current user is already scoped automatically for all tools.
+
+- Never ask the user for a user_id or thread_id.
+
+- When the user wants to add, update, delete, list, search, summarize, or check budgets and expenses, use the tools instead of guessing.
 """
 
-)
+
+def _runtime_context_messages(state: AgentState) -> list[SystemMessage]:
+    messages: list[SystemMessage] = [
+        SystemMessage(
+            content=(
+                "Current session context:\n"
+                f"- user_scope: {state['thread_id']}\n"
+                f"- current_utc_date: {datetime.now(timezone.utc).date().isoformat()}\n"
+                "- Finance tools are already scoped to this user.\n"
+                "- Do not ask for or expose the user_scope unless the user explicitly asks about it."
+            )
+        )
+    ]
+
+    retrieved_memories = state.get("retrieved_memories")
+
+    if not retrieved_memories or retrieved_memories == "No relevant memories.":
+        return messages
+
+    messages.append(
+        SystemMessage(
+            content=f"Relevant User Context:\n{retrieved_memories}",
+        )
+    )
+    return messages
+
+
+@lru_cache
+def get_expense_agent():
+    return create_agent(
+        model=model,
+        tools=get_finance_tools(),
+        system_prompt=AGENT_SYSTEM_PROMPT,
+    )
+
+
+async def aget_expense_agent():
+    return await asyncio.to_thread(get_expense_agent)
+
+
+async def agent(state: AgentState) -> dict[str, list[BaseMessage]]:
+    user_token = set_active_user_id(state["thread_id"])
+    messages = [
+        *_runtime_context_messages(state),
+        *state["messages"],
+    ]
+
+    try:
+        result = await (await aget_expense_agent()).ainvoke({"messages": messages})
+        response_messages = result.get("messages", [])
+
+        if not response_messages:
+            raise ValueError("The agent did not return any messages.")
+
+        # Only return the new assistant message so the outer LangGraph state
+        # appends cleanly without duplicating prior history.
+        return {"messages": [response_messages[-1]]}
+    finally:
+        reset_active_user_id(user_token)
