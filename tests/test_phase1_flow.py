@@ -9,6 +9,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import agent as agent_module
+import decide as decide_module
 import graph as graph_module
 import main as main_module
 import reterival as retrieval_module
@@ -77,15 +78,71 @@ def test_retrieval_memory_falls_back_when_vector_search_fails(monkeypatch) -> No
     assert result == {"retrieved_memories": retrieval_module.NO_RELEVANT_MEMORIES}
 
 
+def test_decide_store_or_not_persists_new_memory(monkeypatch) -> None:
+    captured = {}
+
+    class FakeVectorStore:
+        async def aadd_texts(self, texts, metadatas):
+            captured["texts"] = texts
+            captured["metadatas"] = metadatas
+
+    async def fake_should_store(query: str) -> bool:
+        assert query == "Remember that I use USD"
+        return True
+
+    async def fake_contains_new_information(query: str, memories: str) -> bool:
+        assert query == "Remember that I use USD"
+        assert memories == retrieval_module.NO_RELEVANT_MEMORIES
+        return True
+
+    async def fake_get_vector_store():
+        return FakeVectorStore()
+
+    monkeypatch.setattr(decide_module, "_should_store", fake_should_store)
+    monkeypatch.setattr(
+        decide_module,
+        "_contains_new_information",
+        fake_contains_new_information,
+    )
+    monkeypatch.setattr(decide_module, "aget_vector_store", fake_get_vector_store)
+
+    result = asyncio.run(
+        decide_module.decide_store_or_not(
+            {
+                "messages": [HumanMessage(content="Remember that I use USD")],
+                "thread_id": "user-1",
+                "retrieved_memories": retrieval_module.NO_RELEVANT_MEMORIES,
+            }
+        )
+    )
+
+    assert result == {}
+    assert captured["texts"] == ["Remember that I use USD"]
+    assert captured["metadatas"] == [{"user_id": "user-1"}]
+
+
+def test_parse_boolean_response_handles_function_style_payload() -> None:
+    result = decide_module._parse_boolean_response(
+        AIMessage(content='<function=StoreDecision> {"ans": False}</function>')
+    )
+
+    assert result is False
+
+
 def test_build_workflow_preserves_conversation_history(monkeypatch) -> None:
     async def fake_retrieval_memory(state, config=None):
         return {"retrieved_memories": f"memory for {state['thread_id']}"}
+
+    async def fake_store_memory(state):
+        assert state["retrieved_memories"] == f"memory for {state['thread_id']}"
+        return {}
 
     async def fake_agent(state):
         latest_user_message = state["messages"][-1].content
         return {"messages": [AIMessage(content=f"reply to {latest_user_message}")]}
 
     monkeypatch.setattr(graph_module, "retrieval_memory", fake_retrieval_memory)
+    monkeypatch.setattr(graph_module, "decide_store_or_not", fake_store_memory)
     monkeypatch.setattr(graph_module, "agent", fake_agent)
 
     workflow = graph_module.build_workflow(InMemorySaver())

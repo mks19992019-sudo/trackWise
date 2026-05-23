@@ -6,6 +6,8 @@ from pathlib import Path
 import sys
 from uuid import UUID, uuid4
 
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import agent as agent_module
@@ -183,3 +185,51 @@ def test_agent_registers_finance_tools(monkeypatch) -> None:
         "budget_status",
     ]
     assert "Never ask the user for a user_id or thread_id" in captured["system_prompt"]
+    assert "Available tools:" in captured["system_prompt"]
+
+
+def test_agent_retries_after_invalid_tool_error(monkeypatch) -> None:
+    class FakeBadRequestError(Exception):
+        pass
+
+    class FakeExpenseAgent:
+        def __init__(self) -> None:
+            self.calls = 0
+            self.payloads = []
+
+        async def ainvoke(self, payload):
+            self.calls += 1
+            self.payloads.append(payload)
+
+            if self.calls == 1:
+                raise FakeBadRequestError(
+                    "tool call validation failed: attempted to call tool 'get_user_name' which was not in request.tools"
+                )
+
+            return {"messages": [AIMessage(content="Recovered response.")]}
+
+    fake_agent = FakeExpenseAgent()
+
+    async def fake_get_expense_agent():
+        return fake_agent
+
+    monkeypatch.setattr(agent_module, "BadRequestError", FakeBadRequestError)
+    monkeypatch.setattr(agent_module, "aget_expense_agent", fake_get_expense_agent)
+
+    result = asyncio.run(
+        agent_module.agent(
+            {
+                "messages": [HumanMessage(content="What is my name?")],
+                "thread_id": "user-1",
+            }
+        )
+    )
+
+    assert result["messages"][0].content == "Recovered response."
+    assert fake_agent.calls == 2
+    retry_system_messages = [
+        message.content
+        for message in fake_agent.payloads[1]["messages"]
+        if isinstance(message, SystemMessage)
+    ]
+    assert any("Never invent tool names" in content for content in retry_system_messages)

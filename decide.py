@@ -1,29 +1,20 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import re
 
-from langchain_core.messages import BaseMessage, HumanMessage
-from pydantic import BaseModel
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 from embeding import aget_vector_store
-from llm import model
+from llm import classification_model
 from prompts import prompt1, prompt2
 from reterival import NO_RELEVANT_MEMORIES
 from state import AgentState
 
 logger = logging.getLogger(__name__)
-
-
-class StoreDecision(BaseModel):
-    """Determine whether to store the user query in long-term memory."""
-
-    ans: bool
-
-
-structured_model = model.with_structured_output(StoreDecision)
-should_store_chain = prompt1 | structured_model
-is_new_memory_chain = prompt2 | structured_model
+BOOLEAN_PATTERN = re.compile(r"\b(true|false)\b", re.IGNORECASE)
 
 
 def _message_text(message: BaseMessage) -> str:
@@ -61,18 +52,48 @@ def _latest_user_message(state: AgentState) -> str:
 
 
 async def _should_store(query: str) -> bool:
-    result = await should_store_chain.ainvoke({"query": query})
-    return result.ans
+    response = await (prompt1 | classification_model).ainvoke({"query": query})
+    return _parse_boolean_response(response)
 
 
 async def _contains_new_information(query: str, memories: str) -> bool:
     if not memories or memories == NO_RELEVANT_MEMORIES:
         return True
 
-    result = await is_new_memory_chain.ainvoke(
+    response = await (prompt2 | classification_model).ainvoke(
         {"query": query, "memories": memories}
     )
-    return result.ans
+    return _parse_boolean_response(response)
+
+
+def _parse_boolean_response(message: AIMessage | BaseMessage) -> bool:
+    text = _message_text(message).strip()
+
+    if not text:
+        raise ValueError("The memory classifier returned an empty response.")
+
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        parsed = None
+
+    if isinstance(parsed, bool):
+        return parsed
+
+    if isinstance(parsed, dict):
+        value = parsed.get("ans")
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"true", "false"}:
+                return normalized == "true"
+
+    match = BOOLEAN_PATTERN.search(text)
+    if match:
+        return match.group(1).lower() == "true"
+
+    raise ValueError(f"Could not parse boolean decision from: {text!r}")
 
 
 async def _store_memory(query: str, thread_id: str) -> None:

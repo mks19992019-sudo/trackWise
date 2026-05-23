@@ -2,8 +2,9 @@ import asyncio
 from datetime import datetime, timezone
 from functools import lru_cache
 
+from groq import BadRequestError
 from langchain.agents import create_agent
-from langchain_core.messages import BaseMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 
 from llm import model
 from state import AgentState
@@ -68,6 +69,15 @@ Tool Rules:
 
 - When the user wants to add, update, delete, list, search, summarize, or check budgets and expenses, use the tools instead of guessing.
 """
+INVALID_TOOL_RETRY_PROMPT = """
+Tool safety reminder:
+
+- You may call only the provided finance tools.
+
+- Never invent tool names.
+
+- If none of the provided tools fit, answer directly or ask a clarifying question.
+"""
 
 
 def _runtime_context_messages(state: AgentState) -> list[SystemMessage]:
@@ -98,15 +108,69 @@ def _runtime_context_messages(state: AgentState) -> list[SystemMessage]:
 
 @lru_cache
 def get_expense_agent():
+    tools = get_finance_tools()
+    tool_names = ", ".join(tool.name for tool in tools)
+
     return create_agent(
         model=model,
-        tools=get_finance_tools(),
-        system_prompt=AGENT_SYSTEM_PROMPT,
+        tools=tools,
+        system_prompt=(
+            f"{AGENT_SYSTEM_PROMPT}\n\n"
+            f"Available tools: {tool_names}."
+        ),
     )
 
 
 async def aget_expense_agent():
     return await asyncio.to_thread(get_expense_agent)
+
+
+def _is_invalid_tool_error(error: Exception) -> bool:
+    message = str(error)
+    return "attempted to call tool" in message or "tool_use_failed" in message
+
+
+async def _fallback_without_tools(messages: list[BaseMessage]) -> AIMessage:
+    fallback_messages = [
+        SystemMessage(
+            content=(
+                "A tool invocation failed. Do not call any tools in this reply. "
+                "If the user asked for an action that requires tools, briefly ask them "
+                "to retry or rephrase instead of guessing."
+            )
+        ),
+        *messages,
+    ]
+    response = await model.ainvoke(fallback_messages)
+
+    if not isinstance(response, AIMessage):
+        raise ValueError("The fallback model response was not an AIMessage.")
+
+    return response
+
+
+async def _invoke_agent(messages: list[BaseMessage]) -> dict:
+    expense_agent = await aget_expense_agent()
+
+    try:
+        return await expense_agent.ainvoke({"messages": messages})
+    except BadRequestError as exc:
+        if not _is_invalid_tool_error(exc):
+            raise
+
+        retry_messages = [
+            SystemMessage(content=INVALID_TOOL_RETRY_PROMPT),
+            *messages,
+        ]
+
+        try:
+            return await expense_agent.ainvoke({"messages": retry_messages})
+        except BadRequestError as retry_exc:
+            if not _is_invalid_tool_error(retry_exc):
+                raise
+
+            fallback_message = await _fallback_without_tools(retry_messages)
+            return {"messages": [fallback_message]}
 
 
 async def agent(state: AgentState) -> dict[str, list[BaseMessage]]:
@@ -117,7 +181,7 @@ async def agent(state: AgentState) -> dict[str, list[BaseMessage]]:
     ]
 
     try:
-        result = await (await aget_expense_agent()).ainvoke({"messages": messages})
+        result = await _invoke_agent(messages)
         response_messages = result.get("messages", [])
 
         if not response_messages:
