@@ -4,7 +4,7 @@ import os
 
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
-from langchain_google_genai import ChatGoogleGenerativeAI
+
 
 load_dotenv()
 
@@ -22,16 +22,7 @@ classification_model = ChatGroq(
     temperature=0,
 )
 
-GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY")
-DEFAULT_GOOGLE_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-model2 = ChatGoogleGenerativeAI(
-    model=DEFAULT_GOOGLE_MODEL,
-    api_key=GOOGLE_API_KEY,
-    temperature=0,
-)
-classification_model2 = ChatGoogleGenerativeAI(
-    model=DEFAULT_GOOGLE_MODEL,
-    api_key=GOOGLE_API_KEY,
-    temperature=0,
-)
+
+
+

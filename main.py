@@ -10,6 +10,9 @@ from redis.asyncio import Redis
 
 from database import close_db_pool, initialize_database
 from graph import close_graph_resources, get_checkpointer, get_workflow
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SESSION_TTL_SECONDS = 20
 TrimmedText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
