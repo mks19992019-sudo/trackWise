@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi import FastAPI, HTTPException
@@ -12,7 +13,9 @@ from database import close_db_pool, initialize_database
 from graph import close_graph_resources, get_checkpointer, get_workflow
 from dotenv import load_dotenv
 
-load_dotenv()
+# Only load .env in development
+if os.getenv("ENVIRONMENT") != "production":
+    load_dotenv()
 
 SESSION_TTL_SECONDS = 20
 TrimmedText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -29,9 +32,6 @@ class ChatMessage(BaseModel):
 
     message: TrimmedText
     thread_id: TrimmedText
-
-
-
 
 
 @asynccontextmanager
@@ -101,6 +101,3 @@ async def chat(payload: ChatMessage):
         raise HTTPException(status_code=500, detail="Workflow returned no messages.")
 
     return response_messages[-1].content
-
-
-

@@ -4,7 +4,9 @@ import os
 import asyncpg
 from dotenv import load_dotenv
 
-load_dotenv()
+# Only load .env in development (not on Render)
+if os.getenv("ENVIRONMENT") != "production":
+    load_dotenv()
 
 DEFAULT_POSTGRES_DSN = os.getenv("DATABASE_URL")
 POSTGRES_DSN = os.getenv("POSTGRES_DSN", DEFAULT_POSTGRES_DSN)
@@ -93,6 +95,9 @@ async def get_db_pool() -> asyncpg.Pool:
             _pool_loop = None
 
         if _pool is None:
+            if not POSTGRES_DSN:
+                raise RuntimeError("DATABASE_URL environment variable is not set")
+            
             _pool = await asyncpg.create_pool(
                 dsn=POSTGRES_DSN,
                 min_size=POSTGRES_MIN_POOL_SIZE,
