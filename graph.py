@@ -53,7 +53,7 @@ async def _initialize_resources() -> None:
             _checkpointer = await _checkpointer_context.__aenter__()
             
             # Initialize LangGraph checkpoint tables schema
-            await _checkpointer.asetup()
+            await _checkpointer.setup()
 
         if _workflow is None:
             _workflow = build_workflow(_checkpointer)
