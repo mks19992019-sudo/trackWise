@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime, timezone
 from functools import lru_cache
 
-from groq import BadRequestError
+from google.api_core.exceptions import GoogleAPIError
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 
@@ -154,7 +154,7 @@ async def _invoke_agent(messages: list[BaseMessage]) -> dict:
 
     try:
         return await expense_agent.ainvoke({"messages": messages})
-    except BadRequestError as exc:
+    except GoogleAPIError as exc:
         if not _is_invalid_tool_error(exc):
             raise
 
@@ -165,7 +165,7 @@ async def _invoke_agent(messages: list[BaseMessage]) -> dict:
 
         try:
             return await expense_agent.ainvoke({"messages": retry_messages})
-        except BadRequestError as retry_exc:
+        except GoogleAPIError as retry_exc:
             if not _is_invalid_tool_error(retry_exc):
                 raise
 

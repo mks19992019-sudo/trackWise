@@ -21,6 +21,10 @@ dependencies = [
     "qdrant-client>=1.18.0",
     "sentence-transformers>=5.5.1",
     "asyncpg>=0.31.0",
+    "langchain-gemini>=0.1.1",
+    "langchain-google-genai>=4.2.3",
+    "google-api-core>=2.0.0",
+    "google-generativeai>=0.3.0",
 ]
 
 [project.optional-dependencies]
