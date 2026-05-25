@@ -1,6 +1,6 @@
 # if type hint not define till now but becuse we import annotations we not get any error 
 from __future__ import annotations
-
+import os
 import asyncio
 from contextlib import AbstractAsyncContextManager
 
@@ -15,7 +15,7 @@ from decide import decide_store_or_not
 from reterival import retrieval_memory
 from state import AgentState
 
-REDIS_URL = "redis://localhost:6379"
+REDIS_URL = os.getenv("REDIS_URL")
 
 _resource_lock = asyncio.Lock()
 _checkpointer_context: AbstractAsyncContextManager[AsyncRedisSaver] | None = None

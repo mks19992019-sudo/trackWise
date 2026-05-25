@@ -1,4 +1,5 @@
 import asyncio
+import os
 from functools import lru_cache
 from typing import Any
 
@@ -7,8 +8,8 @@ from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 
-QDRANT_HOST = "localhost"
-QDRANT_PORT = 6333
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", None)
 COLLECTION_NAME = "memories"
 EMBEDDING_MODEL_NAME = "BAAI/bge-base-en-v1.5"
 
@@ -16,13 +17,12 @@ EMBEDDING_MODEL_NAME = "BAAI/bge-base-en-v1.5"
 @lru_cache
 def get_qdrant_client() -> QdrantClient:
     return QdrantClient(
-        host=QDRANT_HOST,
-        port=QDRANT_PORT,
+        url=QDRANT_URL,
+        api_key=QDRANT_API_KEY,
     )
 
 
 #2
-# to check and ensure collection is exit in Qdrant or not 
 def ensure_collection_exists(client: QdrantClient) -> None:
     if client.collection_exists(COLLECTION_NAME):
         return
@@ -49,7 +49,8 @@ def get_vector_store() -> QdrantVectorStore:
     return QdrantVectorStore.from_existing_collection(
         embedding=get_embeddings(),
         collection_name=COLLECTION_NAME,
-        url=f"http://{QDRANT_HOST}:{QDRANT_PORT}",
+        url=QDRANT_URL,
+        api_key=QDRANT_API_KEY,
     )
 
 
@@ -61,7 +62,6 @@ class LazyVectorStoreProxy:
 vector_store = LazyVectorStoreProxy()
 
 
-
-#*** 5
+#5
 async def aget_vector_store() -> QdrantVectorStore:
     return await asyncio.to_thread(get_vector_store)

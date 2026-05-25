@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEFAULT_POSTGRES_DSN = "postgresql://postgres:postgres@localhost:5442/postgres"
+DEFAULT_POSTGRES_DSN = os.getenv("DATABASE_URL")
 POSTGRES_DSN = os.getenv("POSTGRES_DSN", DEFAULT_POSTGRES_DSN)
 POSTGRES_MIN_POOL_SIZE = int(os.getenv("POSTGRES_MIN_POOL_SIZE", "1"))
 POSTGRES_MAX_POOL_SIZE = int(os.getenv("POSTGRES_MAX_POOL_SIZE", "10"))
