@@ -7,22 +7,19 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ConfigDict, StringConstraints
-from redis.asyncio import Redis
+from redis.asyncio import from_url
 
 from database import close_db_pool, initialize_database
 from graph import close_graph_resources, get_checkpointer, get_workflow
 from dotenv import load_dotenv
 
-# Only load .env in development
-if os.getenv("ENVIRONMENT") != "production":
-    load_dotenv()
+load_dotenv()
 
 SESSION_TTL_SECONDS = 20
 TrimmedText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
-Redis_client = Redis(
-    host="localhost",
-    port=6379,
+Redis_client = from_url(
+    os.getenv("REDIS_URL", "redis://localhost:6379"),
     decode_responses=True,
 )
 

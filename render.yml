@@ -5,8 +5,6 @@ services:
     buildCommand: pip install uv && uv sync
     startCommand: uv run uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: ENVIRONMENT
-        value: production
       - key: GROQ_API_KEY
         sync: false
       - key: QDRANT_URL
@@ -30,4 +28,4 @@ databases:
 
   - name: trackwise-redis
     type: redis
-    plan: free
+    plan: frees
