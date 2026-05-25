@@ -51,6 +51,9 @@ async def _initialize_resources() -> None:
         if _checkpointer is None:
             _checkpointer_context = AsyncPostgresSaver.from_conn_string(DATABASE_URL)
             _checkpointer = await _checkpointer_context.__aenter__()
+            
+            # Initialize LangGraph checkpoint tables schema
+            await _checkpointer.asetup()
 
         if _workflow is None:
             _workflow = build_workflow(_checkpointer)
