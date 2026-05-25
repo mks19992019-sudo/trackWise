@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: trackwise-backend
+    runtime: python
+    buildCommand: pip install uv && uv sync
+    startCommand: uv run uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: QDRANT_URL
+        value: https://df38396d-c906-41b7-ac5e-73289cb0a767.sa-east-1-0.aws.cloud.qdrant.io
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: trackwise-redis
+          type: redis
+          property: connectionString
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trackwise-postgres
+          property: connectionString
+
+databases:
+  - name: trackwise-postgres
+    databaseName: trackwise
+    plan: free
+
+  - name: trackwise-redis
+    type: redis
+    plan: free
