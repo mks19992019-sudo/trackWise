@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+
 import asyncio
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -68,10 +68,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# ============================================================================
-# AGENTIC ENDPOINTS (Main Focus)
-# ============================================================================
 
 @app.get("/")
 async def home():

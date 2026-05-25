@@ -1,384 +1,129 @@
-# AI Expense Tracker Agent
+# TrackWise
 
-A production-oriented AI-powered expense tracking assistant built with FastAPI, LangGraph, PostgreSQL, Redis, Qdrant, and modern LLM tooling.
-
-The system combines conversational AI, persistent memory, tool calling, and structured financial data management to help users track expenses, manage budgets, and gain insights through natural language interactions.
+An AI agent that manages your expenses through natural language. Just talk to it — it handles the rest.
 
 ---
 
-## Features
+## What it does
 
-### Expense Management
+TrackWise lets you manage your finances by simply having a conversation.
 
-- Add expenses using natural language
-- Update existing expenses
-- Delete expenses
-- Search expenses
-- Categorize spending
-- Monthly spending summaries
-- Budget creation and tracking
-- Financial insights and analytics
+- Add expenses in plain English
+- Check your spending history
+- Get summaries by category or date
+- Set and track budgets
+- Ask anything about your money
 
-### AI Agent Capabilities
+No forms. No spreadsheets. Just talk.
 
-- Conversational expense management
-- Tool calling architecture
-- Multi-step reasoning workflow
-- Structured outputs
-- Context-aware responses
 
-### Memory System
-
-#### Short-Term Memory
-
-- LangGraph checkpointing
-- Redis-backed conversation persistence
-- Session continuity
-
-#### Long-Term Memory
-
-- Qdrant vector database
-- Semantic memory retrieval
-- User preference storage
-- Personalized interactions
-
-### Backend Architecture
-
-- FastAPI REST API
-- Async-first architecture
-- PostgreSQL persistence layer
-- Redis caching and checkpoints
-- Vector memory retrieval
-- Modular service design
-
----
-
-## System Architecture
-
-```text
-User
- │
- ▼
-FastAPI API Layer
- │
- ▼
-LangGraph Workflow
- │
- ├── Retrieval Memory Node
- │
- ├── AI Agent Node
- │
- └── Tool Execution Layer
- │
- ▼
-Business Services
- │
- ├── PostgreSQL
- │
- ├── Redis
- │
- └── Qdrant
- │
- ▼
-Response Generation
- │
- ▼
-User
-```
-
----
 
 ## Tech Stack
 
-### Backend
-
-- FastAPI
-- Python 3.14
-- Pydantic
-
-### Agent Framework
-
-- LangGraph
-- LangChain
-- Create React Agent
-
-### Databases
-
-- PostgreSQL
-- Redis
-- Qdrant
-
-### AI Models
-
-- Groq
-- Llama Models
-- Compatible with OpenAI
-- Compatible with Anthropic
-
-### Infrastructure
-
-- Docker
-- Docker Compose
-- Async Architecture
+| Layer | Technology |
+|-------|-----------|
+| Agent Framework | LangGraph + LangChain |
+| Backend | FastAPI (async) |
+| LLM | Groq (Llama) |
+| Database | PostgreSQL |
+| Vector Memory | Qdrant |
+| Embeddings | HuggingFace BGE |
+| Deployment | Docker |
 
 ---
 
-## Project Structure
+## Architecture
 
-```text
-app/
-│
-├── api/
-├── graph/
-├── agent/
-├── memory/
-├── tools/
-├── database/
-├── services/
-├── models/
-├── schemas/
-├── config/
-│
-├── main.py
-│
-tests/
-│
-docker/
-│
-README.md
+```
+User Message
+     │
+     ▼
+FastAPI /chat
+     │
+     ▼
+LangGraph Workflow
+     │
+     ├── Retrieval Node (long-term memory)
+     ├── Memory Decision Node (what to store)
+     └── AI Agent Node (tools + reasoning)
+     │
+     ▼
+PostgreSQL + Qdrant
+     │
+     ▼
+Response
 ```
 
 ---
 
-## Agent Workflow
+## Memory System
 
-Current workflow:
+**Short-term** — LangGraph checkpointer backed by PostgreSQL. Keeps conversation context across requests.
 
-```text
-START
- │
- ▼
-retrieval_memory
- │
- ▼
-ai_agent
- │
- ▼
-END
-```
-
-Future workflow:
-
-```text
-START
- │
- ▼
-retrieval_memory
- │
- ▼
-decide_store_or_not
- │
- ▼
-ai_agent
- │
- ▼
-END
-```
+**Long-term** — Qdrant vector store. Remembers user preferences and patterns across sessions.
 
 ---
 
-## Memory Architecture
+## Quick Start
 
-### Short-Term Memory
-
-Purpose:
-
-- Preserve conversation state
-- Session continuity
-- Multi-turn reasoning
-
-Technology:
-
-- LangGraph Checkpointer
-- Redis
-
-### Long-Term Memory
-
-Purpose:
-
-- Store user preferences
-- Budget preferences
-- Financial goals
-- Important personal context
-
-Technology:
-
-- Qdrant Vector Database
-- Semantic Retrieval
-
----
-
-## Getting Started
-
-### Clone Repository
-
+**1. Clone**
 ```bash
-git clone https://github.com/your-username/expense-tracker-agent.git
-
-cd expense-tracker-agent
+git clone https://github.com/mks19992019-sudo/trackWise
+cd trackWise
 ```
 
-### Create Virtual Environment
-
+**2. Environment**
 ```bash
-python -m venv .venv
-
-source .venv/bin/activate
+GROQ_API_KEY=your_key
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=your_key
 ```
 
-### Install Dependencies
-
+**3. Start services**
 ```bash
-pip install -r requirements.txt
+docker compose up -d
 ```
+
+**4. Run**
+```bash
+uv run uvicorn main:app --reload
+```
+
+API live at `http://localhost:8000`
+Docs at `http://localhost:8000/docs`
 
 ---
 
-## Environment Variables
+## API
 
-Create a `.env` file:
-
-```env
-POSTGRES_URL=
-REDIS_URL=
-QDRANT_URL=
-QDRANT_API_KEY=
-
-GROQ_API_KEY=
-
-LANGCHAIN_API_KEY=
-LANGCHAIN_TRACING_V2=true
 ```
+POST /chat
 
----
-
-## Run PostgreSQL
-
-```bash
-docker compose up -d postgres
-```
-
----
-
-## Run Redis
-
-```bash
-docker compose up -d redis
-```
-
----
-
-## Run Qdrant
-
-```bash
-docker compose up -d qdrant
-```
-
----
-
-## Run Application
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Server:
-
-```text
-http://localhost:8000
-```
-
-Swagger:
-
-```text
-http://localhost:8000/docs
-```
-
----
-
-## Example Request
-
-```json
 {
-  "thread_id": "user-123",
-  "message": "I spent 500 rupees on groceries today"
-}
-```
-
-Example Response:
-
-```json
-{
-  "response": "I've recorded a grocery expense of ₹500."
+  "message": "I spent 500 rupees on groceries",
+  "thread_id": "user-123"
 }
 ```
 
 ---
 
-## Testing
+## Example
 
-Run tests:
+```
+User: I spent 1500 on groceries yesterday
+AI:   Recorded ₹1,500 grocery expense for yesterday.
 
-```bash
-pytest
+User: Show me my food expenses this month
+AI:   You've spent ₹4,200 on food this month across 6 transactions.
+
+User: Set a food budget of 5000 rupees
+AI:   Monthly food budget of ₹5,000 created.
 ```
 
-Run coverage:
-
-```bash
-pytest --cov
-```
-
 ---
 
-## Deployment
+## Built by
 
-Recommended:
-
-- Docker
-- Railway
-- Render
-- Fly.io
-- DigitalOcean
-- AWS ECS
-- Kubernetes
-
----
-
-## Roadmap
-
-- [x] FastAPI backend
-- [x] LangGraph workflow
-- [x] Redis checkpointing
-- [x] Qdrant memory retrieval
-- [x] Async architecture
-- [ ] Budget analytics
-- [ ] Long-term memory classification
-- [ ] Financial recommendations
-- [ ] Multi-user dashboard
-- [ ] Notification system
-- [ ] Mobile integration
-
----
-
-## License
-
-MIT License
-
----
-
-## Author
-
-Mohit Kumar
-
-Building practical AI agents, memory systems, and intelligent automation workflows.
+**Mohit Kumar Suman**
+[GitHub](https://github.com/mks19992019-sudo) · [LinkedIn](https://www.linkedin.com/in/mohit-kumar-suman-4ab261346/) · [Portfolio](https://protfoilo-ivory.vercel.app)

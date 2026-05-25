@@ -1,5 +1,5 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://trackwise-2.onrender.com";
-
+//const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://trackwise-2.onrender.com";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 export interface ChatPayload {
   message: string;
   thread_id: string;
