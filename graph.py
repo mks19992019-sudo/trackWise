@@ -1,8 +1,12 @@
+# if type hint not define till now but becuse we import annotations we not get any error 
 from __future__ import annotations
+
 import asyncio
 from contextlib import AbstractAsyncContextManager
 
+# BaseCheckpointerSaver is a type hint .. in more upgradtion our checkpointer easly accecpt the other saver also
 from langgraph.checkpoint.base import BaseCheckpointSaver
+# use AsyncRedisSaver insted of normal RedisSaver 
 from langgraph.checkpoint.redis import AsyncRedisSaver
 from langgraph.graph import START, StateGraph
 

@@ -12,7 +12,7 @@ QDRANT_PORT = 6333
 COLLECTION_NAME = "memories"
 EMBEDDING_MODEL_NAME = "BAAI/bge-base-en-v1.5"
 
-
+#1
 @lru_cache
 def get_qdrant_client() -> QdrantClient:
     return QdrantClient(
@@ -21,6 +21,8 @@ def get_qdrant_client() -> QdrantClient:
     )
 
 
+#2
+# to check and ensure collection is exit in Qdrant or not 
 def ensure_collection_exists(client: QdrantClient) -> None:
     if client.collection_exists(COLLECTION_NAME):
         return
@@ -33,12 +35,12 @@ def ensure_collection_exists(client: QdrantClient) -> None:
         ),
     )
 
-
+#3
 @lru_cache
 def get_embeddings() -> HuggingFaceEmbeddings:
     return HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
-
+#4
 @lru_cache
 def get_vector_store() -> QdrantVectorStore:
     client = get_qdrant_client()
@@ -59,5 +61,7 @@ class LazyVectorStoreProxy:
 vector_store = LazyVectorStoreProxy()
 
 
+
+#*** 5
 async def aget_vector_store() -> QdrantVectorStore:
     return await asyncio.to_thread(get_vector_store)
