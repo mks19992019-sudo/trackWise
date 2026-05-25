@@ -12,12 +12,12 @@ DEFAULT_AGENT_MODEL = os.getenv("GROQ_AGENT_MODEL", "llama-3.3-70b-versatile")
 DEFAULT_MEMORY_MODEL = os.getenv("GROQ_MEMORY_MODEL", "llama-3.1-8b-instant")
 DEFAULT_TEMPERATURE = float(os.getenv("GROQ_TEMPERATURE", "0"))
 
-model2 = ChatGroq(
+model = ChatGroq(
     model=DEFAULT_AGENT_MODEL,
     temperature=DEFAULT_TEMPERATURE,
 )
 
-classification_model2 = ChatGroq(
+classification_model = ChatGroq(
     model=DEFAULT_MEMORY_MODEL,
     temperature=0,
 )
@@ -25,12 +25,12 @@ classification_model2 = ChatGroq(
 GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY")
 DEFAULT_GOOGLE_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-model = ChatGoogleGenerativeAI(
+model2 = ChatGoogleGenerativeAI(
     model=DEFAULT_GOOGLE_MODEL,
     api_key=GOOGLE_API_KEY,
     temperature=0,
 )
-classification_model = ChatGoogleGenerativeAI(
+classification_model2 = ChatGoogleGenerativeAI(
     model=DEFAULT_GOOGLE_MODEL,
     api_key=GOOGLE_API_KEY,
     temperature=0,

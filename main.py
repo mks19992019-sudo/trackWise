@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ConfigDict, StringConstraints
 from redis.asyncio import Redis
@@ -48,6 +49,14 @@ app = FastAPI(
     title="Finance AI System",
     description="AI-powered personal finance management",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
