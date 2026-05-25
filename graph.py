@@ -6,8 +6,8 @@ from contextlib import AbstractAsyncContextManager
 
 # BaseCheckpointerSaver is a type hint .. in more upgradtion our checkpointer easly accecpt the other saver also
 from langgraph.checkpoint.base import BaseCheckpointSaver
-# use AsyncRedisSaver insted of normal RedisSaver 
-from langgraph.checkpoint.redis import AsyncRedisSaver
+# use AsyncPostgresSaver instead of RedisSaver 
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph import START, StateGraph
 
 from agent import agent
@@ -15,11 +15,11 @@ from decide import decide_store_or_not
 from reterival import retrieval_memory
 from state import AgentState
 
-REDIS_URL = os.getenv("REDIS_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
 
 _resource_lock = asyncio.Lock()
-_checkpointer_context: AbstractAsyncContextManager[AsyncRedisSaver] | None = None
-_checkpointer: AsyncRedisSaver | None = None
+_checkpointer_context: AbstractAsyncContextManager[AsyncPostgresSaver] | None = None
+_checkpointer: AsyncPostgresSaver | None = None
 _workflow = None
 
 
@@ -49,14 +49,14 @@ async def _initialize_resources() -> None:
 
     async with _resource_lock:
         if _checkpointer is None:
-            _checkpointer_context = AsyncRedisSaver.from_conn_string(REDIS_URL)
+            _checkpointer_context = AsyncPostgresSaver.from_conn_string(DATABASE_URL)
             _checkpointer = await _checkpointer_context.__aenter__()
 
         if _workflow is None:
             _workflow = build_workflow(_checkpointer)
 
 
-async def get_checkpointer() -> AsyncRedisSaver:
+async def get_checkpointer() -> AsyncPostgresSaver:
     await _initialize_resources()
 
     assert _checkpointer is not None

@@ -1,27 +1,33 @@
 from __future__ import annotations
 
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ConfigDict, StringConstraints
-from redis.asyncio import from_url
 
-from database import close_db_pool, initialize_database
-from graph import close_graph_resources, get_checkpointer, get_workflow
+from database import close_db_pool, initialize_database, cleanup_old_checkpoints, update_thread_activity
+from graph import close_graph_resources, get_workflow
 from dotenv import load_dotenv
 
 load_dotenv()
 
-SESSION_TTL_SECONDS = 20
 TrimmedText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
-Redis_client = from_url(
-    os.getenv("REDIS_URL", "redis://localhost:6379"),
-    decode_responses=True,
-)
+_cleanup_task: asyncio.Task | None = None
+
+
+async def cleanup_scheduler():
+    """Run cleanup every 24 hours"""
+    while True:
+        try:
+            await asyncio.sleep(86400)  # 24 hours
+            await cleanup_old_checkpoints()
+        except Exception:
+            pass
 
 
 class ChatMessage(BaseModel):
@@ -34,13 +40,16 @@ class ChatMessage(BaseModel):
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # start server
+    global _cleanup_task
     await initialize_database()
+    _cleanup_task = asyncio.create_task(cleanup_scheduler())
 
     try:
         yield
     finally:
         # shutdown the server
-        await Redis_client.aclose()
+        if _cleanup_task:
+            _cleanup_task.cancel()
         await close_graph_resources()
         await close_db_pool()
 
@@ -75,13 +84,9 @@ async def chat(payload: ChatMessage):
     """Main chat endpoint - AI agent processes user messages"""
     thread_id = payload.thread_id
     user_message = payload.message
-    session_key = f"session:{thread_id}"
     
-    if not await Redis_client.exists(session_key):
-        checkpointer = await get_checkpointer()
-        await checkpointer.adelete_thread(thread_id)
-
-    await Redis_client.set(session_key, "active", ex=SESSION_TTL_SECONDS)
+    # Update activity timestamp for this thread
+    await update_thread_activity(thread_id)
 
     workflow = await get_workflow()
     result = await workflow.ainvoke(

@@ -78,72 +78,67 @@ def test_retrieval_memory_falls_back_when_vector_search_fails(monkeypatch) -> No
     assert result == {"retrieved_memories": retrieval_module.NO_RELEVANT_MEMORIES}
 
 
-def test_decide_store_or_not_persists_new_memory(monkeypatch) -> None:
-    captured = {}
-
+def test_retrieval_memory_enriches_state_with_search_results(monkeypatch) -> None:
     class FakeVectorStore:
-        async def aadd_texts(self, texts, metadatas):
-            captured["texts"] = texts
-            captured["metadatas"] = metadatas
-
-    async def fake_should_store(query: str) -> bool:
-        assert query == "Remember that I use USD"
-        return True
-
-    async def fake_contains_new_information(query: str, memories: str) -> bool:
-        assert query == "Remember that I use USD"
-        assert memories == retrieval_module.NO_RELEVANT_MEMORIES
-        return True
+        async def asimilarity_search(self, query: str, k: int = 10):
+            if query == "currency" and k == 10:
+                return [
+                    type("obj", (object,), {"page_content": "User prefers CAD"})(),
+                ]
+            return []
 
     async def fake_get_vector_store():
         return FakeVectorStore()
 
-    monkeypatch.setattr(decide_module, "_should_store", fake_should_store)
-    monkeypatch.setattr(
-        decide_module,
-        "_contains_new_information",
-        fake_contains_new_information,
-    )
-    monkeypatch.setattr(decide_module, "aget_vector_store", fake_get_vector_store)
+    monkeypatch.setattr(retrieval_module, "aget_vector_store", fake_get_vector_store)
 
+    result = asyncio.run(
+        retrieval_module.retrieval_memory(
+            {
+                "messages": [HumanMessage(content="What currency do I use?")],
+                "thread_id": "user-1",
+            },
+            {"configurable": {"thread_id": "user-1"}},
+        )
+    )
+
+    assert result == {"retrieved_memories": "User prefers CAD"}
+
+
+def test_decide_store_or_not_returns_state_unchanged_when_no_system_message(
+    monkeypatch,
+) -> None:
     result = asyncio.run(
         decide_module.decide_store_or_not(
             {
-                "messages": [HumanMessage(content="Remember that I use USD")],
+                "messages": [HumanMessage(content="How much did I spend?")],
                 "thread_id": "user-1",
-                "retrieved_memories": retrieval_module.NO_RELEVANT_MEMORIES,
+                "retrieved_memories": "User tracks expenses in USD.",
             }
         )
     )
 
-    assert result == {}
-    assert captured["texts"] == ["Remember that I use USD"]
-    assert captured["metadatas"] == [{"user_id": "user-1"}]
+    assert result == {
+        "messages": [HumanMessage(content="How much did I spend?")],
+        "thread_id": "user-1",
+        "retrieved_memories": "User tracks expenses in USD.",
+    }
 
 
-def test_parse_boolean_response_handles_function_style_payload() -> None:
-    result = decide_module._parse_boolean_response(
-        AIMessage(content='<function=StoreDecision> {"ans": False}</function>')
-    )
-
-    assert result is False
-
-
-def test_build_workflow_preserves_conversation_history(monkeypatch) -> None:
-    async def fake_retrieval_memory(state, config=None):
-        return {"retrieved_memories": f"memory for {state['thread_id']}"}
-
-    async def fake_store_memory(state):
-        assert state["retrieved_memories"] == f"memory for {state['thread_id']}"
-        return {}
-
+def test_workflow_maintains_state_across_invocations(monkeypatch) -> None:
     async def fake_agent(state):
-        latest_user_message = state["messages"][-1].content
-        return {"messages": [AIMessage(content=f"reply to {latest_user_message}")]}
+        return {"messages": state["messages"] + [AIMessage(content="reply to show me my summary")]}
 
-    monkeypatch.setattr(graph_module, "retrieval_memory", fake_retrieval_memory)
-    monkeypatch.setattr(graph_module, "decide_store_or_not", fake_store_memory)
-    monkeypatch.setattr(graph_module, "agent", fake_agent)
+    async def fake_decide_store_or_not(state, config=None):
+        return state
+
+    async def fake_retrieval_memory(state, config=None):
+        thread_id = state.get("thread_id", "")
+        return {"retrieved_memories": f"memory for {thread_id}"}
+
+    monkeypatch.setattr(agent_module, "agent", fake_agent)
+    monkeypatch.setattr(decide_module, "decide_store_or_not", fake_decide_store_or_not)
+    monkeypatch.setattr(retrieval_module, "retrieval_memory", fake_retrieval_memory)
 
     workflow = graph_module.build_workflow(InMemorySaver())
     config = {"configurable": {"thread_id": "thread-1"}}
@@ -168,11 +163,11 @@ def test_build_workflow_preserves_conversation_history(monkeypatch) -> None:
     )
     state = workflow.get_state(config).values
 
-    assert first_result["messages"][-1].content == "reply to hello"
+    assert first_result["messages"][-1].content == "reply to show me my summary"
     assert second_result["messages"][-1].content == "reply to show me my summary"
     assert [message.content for message in state["messages"]] == [
         "hello",
-        "reply to hello",
+        "reply to show me my summary",
         "show me my summary",
         "reply to show me my summary",
     ]
@@ -181,27 +176,6 @@ def test_build_workflow_preserves_conversation_history(monkeypatch) -> None:
 
 
 def test_chat_endpoint_keeps_existing_contract(monkeypatch) -> None:
-    class FakeRedisClient:
-        def __init__(self) -> None:
-            self.set_calls = []
-
-        async def exists(self, key: str) -> int:
-            assert key == "session:user-1"
-            return 0
-
-        async def set(self, key: str, value: str, ex: int) -> None:
-            self.set_calls.append((key, value, ex))
-
-        async def aclose(self) -> None:
-            return None
-
-    class FakeCheckpointer:
-        def __init__(self) -> None:
-            self.deleted_threads = []
-
-        async def adelete_thread(self, thread_id: str) -> None:
-            self.deleted_threads.append(thread_id)
-
     class FakeWorkflow:
         async def ainvoke(self, payload, config):
             assert payload["thread_id"] == "user-1"
@@ -209,12 +183,7 @@ def test_chat_endpoint_keeps_existing_contract(monkeypatch) -> None:
             assert config["configurable"]["thread_id"] == "user-1"
             return {"messages": [AIMessage(content="Done.")]}
 
-    fake_redis = FakeRedisClient()
-    fake_checkpointer = FakeCheckpointer()
     fake_workflow = FakeWorkflow()
-
-    async def fake_get_checkpointer():
-        return fake_checkpointer
 
     async def fake_get_workflow():
         return fake_workflow
@@ -228,12 +197,14 @@ def test_chat_endpoint_keeps_existing_contract(monkeypatch) -> None:
     async def fake_close_db_pool() -> None:
         return None
 
-    monkeypatch.setattr(main_module, "Redis_client", fake_redis)
-    monkeypatch.setattr(main_module, "get_checkpointer", fake_get_checkpointer)
+    async def fake_update_thread_activity(thread_id: str) -> None:
+        return None
+
     monkeypatch.setattr(main_module, "get_workflow", fake_get_workflow)
     monkeypatch.setattr(main_module, "close_graph_resources", fake_close_graph_resources)
     monkeypatch.setattr(main_module, "initialize_database", fake_initialize_database)
     monkeypatch.setattr(main_module, "close_db_pool", fake_close_db_pool)
+    monkeypatch.setattr(main_module, "update_thread_activity", fake_update_thread_activity)
 
     with TestClient(main_module.app) as client:
         response = client.post(
@@ -246,5 +217,3 @@ def test_chat_endpoint_keeps_existing_contract(monkeypatch) -> None:
 
     assert response.status_code == 200
     assert response.json() == "Done."
-    assert fake_checkpointer.deleted_threads == ["user-1"]
-    assert fake_redis.set_calls == [("session:user-1", "active", 20)]

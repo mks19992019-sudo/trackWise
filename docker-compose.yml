@@ -8,18 +8,9 @@ services:
     ports:
       - "5442:5432"
 
-  redis:
-    image: redis/redis-stack-server:latest
-    container_name: redis
-    ports:
-      - "6379:6379"
-
   qdrant:
     image: qdrant/qdrant:latest
     container_name: qdrant
     ports:
-
-    # uper port is important for us 
-    # left for our machine port and the right one Container  port 
       - "6333:6333"
       - "6334:6334"

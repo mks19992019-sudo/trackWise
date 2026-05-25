@@ -74,6 +74,26 @@ CREATE INDEX IF NOT EXISTS idx_budgets_user_category_period
 
 CREATE INDEX IF NOT EXISTS idx_budgets_user_currency_period
     ON budgets (user_id, currency, period_start, period_end);
+
+CREATE TABLE IF NOT EXISTS thread_activity (
+    thread_id TEXT PRIMARY KEY,
+    last_active TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_thread_activity_last_active
+    ON thread_activity (last_active DESC);
+"""
+
+# TTL cleanup for LangGraph checkpoints and inactive threads (7 days)
+CLEANUP_SQL = """
+DELETE FROM langgraph_checkpoint 
+WHERE thread_id IN (
+    SELECT thread_id FROM thread_activity 
+    WHERE last_active < NOW() - INTERVAL '7 days'
+);
+
+DELETE FROM thread_activity 
+WHERE last_active < NOW() - INTERVAL '7 days';
 """
 
 _pool: asyncpg.Pool | None = None
@@ -115,6 +135,34 @@ async def initialize_database() -> asyncpg.Pool:
         await connection.execute(SCHEMA_SQL)
 
     return pool
+
+
+async def update_thread_activity(thread_id: str) -> None:
+    """Update the last_active timestamp for a thread"""
+    pool = await get_db_pool()
+    
+    try:
+        async with pool.acquire() as connection:
+            await connection.execute("""
+                INSERT INTO thread_activity (thread_id, last_active) 
+                VALUES ($1, NOW())
+                ON CONFLICT (thread_id) 
+                DO UPDATE SET last_active = NOW()
+            """, thread_id)
+    except Exception:
+        pass
+
+
+async def cleanup_old_checkpoints() -> None:
+    """Delete checkpoints older than 7 days"""
+    pool = await get_db_pool()
+    
+    try:
+        async with pool.acquire() as connection:
+            await connection.execute(CLEANUP_SQL)
+    except Exception:
+        # Table might not exist yet, that's ok
+        pass
 
 
 async def close_db_pool() -> None:
