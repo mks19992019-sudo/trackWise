@@ -154,7 +154,7 @@ async def _invoke_agent(messages: list[BaseMessage]) -> dict:
 
     try:
         return await expense_agent.ainvoke({"messages": messages})
-    except GoogleAPIError as exc:
+    except Exception as exc:  # Catch broad exceptions to handle Groq errors
         if not _is_invalid_tool_error(exc):
             raise
 
@@ -165,7 +165,7 @@ async def _invoke_agent(messages: list[BaseMessage]) -> dict:
 
         try:
             return await expense_agent.ainvoke({"messages": retry_messages})
-        except GoogleAPIError as retry_exc:
+        except Exception as retry_exc:  # Catch broad exceptions for retry
             if not _is_invalid_tool_error(retry_exc):
                 raise
 
