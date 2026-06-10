@@ -7,11 +7,11 @@ import re
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-from embeding import aget_vector_store
-from llm import classification_model
-from prompts import prompt1, prompt2
-from reterival import NO_RELEVANT_MEMORIES
-from state import AgentState
+from legacy.embeding import aget_vector_store
+from legacy.llm import classification_model
+from legacy.prompts import prompt1, prompt2
+from legacy.reterival import NO_RELEVANT_MEMORIES
+from legacy.state import AgentState
 
 logger = logging.getLogger(__name__)
 BOOLEAN_PATTERN = re.compile(r"\b(true|false)\b", re.IGNORECASE)

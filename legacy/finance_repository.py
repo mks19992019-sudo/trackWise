@@ -8,8 +8,8 @@ from uuid import UUID, uuid4
 
 import asyncpg
 
-from database import initialize_database
-from finance_models import (
+from legacy.database import initialize_database
+from legacy.finance_models import (
     BudgetAnalytics,
     BudgetCreate,
     BudgetCurrencyAnalytics,

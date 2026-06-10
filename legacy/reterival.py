@@ -4,8 +4,8 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from qdrant_client.models import FieldCondition, Filter, MatchValue
 
-from embeding import aget_vector_store
-from state import AgentState
+from legacy.embeding import aget_vector_store
+from legacy.state import AgentState
 
 logger = logging.getLogger(__name__)
 NO_RELEVANT_MEMORIES = "No relevant memories."

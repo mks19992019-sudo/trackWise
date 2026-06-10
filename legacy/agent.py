@@ -6,9 +6,9 @@ from google.api_core.exceptions import GoogleAPIError
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 
-from llm import model
-from state import AgentState
-from tool import get_finance_tools, reset_active_user_id, set_active_user_id
+from legacy.llm import model
+from legacy.state import AgentState
+from legacy.tool import get_finance_tools, reset_active_user_id, set_active_user_id
 
 AGENT_SYSTEM_PROMPT = """
 You are an intelligent personal expense tracking assistant.

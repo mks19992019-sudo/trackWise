@@ -10,10 +10,10 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.graph import START, StateGraph
 
-from agent import agent
-from decide import decide_store_or_not
-from reterival import retrieval_memory
-from state import AgentState
+from legacy.agent import agent
+from legacy.decide import decide_store_or_not
+from legacy.reterival import retrieval_memory
+from legacy.state import AgentState
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres")
 
@@ -59,11 +59,6 @@ async def _initialize_resources() -> None:
             _workflow = build_workflow(_checkpointer)
 
 
-async def get_checkpointer() -> AsyncPostgresSaver:
-    await _initialize_resources()
-
-    assert _checkpointer is not None
-    return _checkpointer
 
 
 async def get_workflow():
@@ -71,6 +66,35 @@ async def get_workflow():
 
     assert _workflow is not None
     return _workflow
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async def get_checkpointer() -> AsyncPostgresSaver:
+    await _initialize_resources()
+
+    assert _checkpointer is not None
+    return _checkpointer
+
+
+
+
+
+
+
+
+
 
 
 async def close_graph_resources() -> None:

@@ -10,7 +10,7 @@ from uuid import UUID
 from langchain_core.tools import tool
 from pydantic import BaseModel
 
-from finance_models import (
+from legacy.finance_models import (
     BudgetCreate,
     BudgetUpdate,
     CategorySummaryRequest,
@@ -20,7 +20,7 @@ from finance_models import (
     ExpenseUpdate,
     MonthlySummaryRequest,
 )
-from finance_repository import get_finance_repository
+from legacy.finance_repository import get_finance_repository
 
 _active_user_id: ContextVar[str | None] = ContextVar("active_user_id", default=None)
 

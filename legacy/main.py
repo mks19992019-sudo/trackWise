@@ -9,8 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
-from database import close_db_pool, initialize_database, cleanup_old_checkpoints, update_thread_activity
-from graph import close_graph_resources, get_workflow
+from legacy.database import close_db_pool, initialize_database, cleanup_old_checkpoints, update_thread_activity
+from legacy.graph import close_graph_resources, get_workflow
 from dotenv import load_dotenv
 
 load_dotenv()
