@@ -3,11 +3,11 @@ from database import connect_db
 import asyncio
 
 async def create_tb():
-    conn = await create_tb()
+    conn = await connect_db()
     cur = conn.cursor()
 
-    await cur.excute("""
-    CREATE TABLE IF NOT EXIT USER(
+    await cur.execute("""
+    CREATE TABLE IF NOT EXISTS users(
                id SERIAL PRIMARY KEY,
                email VARCHAR(200),
                google_id VARCHAR(200),
@@ -19,9 +19,9 @@ async def create_tb():
         id SERIAL PRIMARY KEY,
         user_id INT REFERENCES users(id),
         monthly_income NUMERIC(10,2),
-        currency VARCHAR(10)
-        creted_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-    );
+        currency VARCHAR(10),
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+    
     """)
     await cur.execute("""
 
@@ -48,7 +48,7 @@ async def create_tb():
     await cur.close()
     await conn.close()
     
-    
+
     
 
     
