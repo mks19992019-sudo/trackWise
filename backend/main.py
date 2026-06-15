@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
+from create_table import create_tb
 from typing import Annotated
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,7 @@ from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, ConfigDict, StringConstraints
 from graph import get_workflow
 from dotenv import load_dotenv
+from graph import _initialize_resources , close_graph_resources
 
 load_dotenv()
 
@@ -24,26 +26,23 @@ class ChatMessage(BaseModel):
     message: TrimmedText
     thread_id: TrimmedText
 
-'''
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # start server
-    global _cleanup_task
+    await create_tb()
+    await _initialize_resources()
 
-    try:
-        yield
-    finally:
-        # shutdown the server
-        if _cleanup_task:
-            _cleanup_task.cancel()
-        await close_graph_resources()
-        await close_db_pool()
-'''
+    yield
+    await close_graph_resources()
+    print ("shuting down")
+
+   
+
 
 app = FastAPI(
     title="Finance AI System",
     description="AI-powered personal finance management",
-    #lifespan=lifespan
+    lifespan=lifespan
 )
 
 app.add_middleware(

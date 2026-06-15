@@ -1,10 +1,10 @@
-from psycopg import connect
+from psycopg import AsyncConnection
 from dotenv import load_dotenv
 import os
 load_dotenv()
 
-def connect_db():
-    conn = connect(os.getenv("DATABASE_URL"))
+async def connect_db():
+    conn = await AsyncConnection.connect(os.getenv("DATABASE_URL"))
     if not conn:
         raise Exception("data base faild to connect")
     else:

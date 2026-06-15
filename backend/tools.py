@@ -1,43 +1,31 @@
 from database import connect_db
 from langchain.tools import tool
 
-
-
-
-#data = cur.fetchall()
-
-
-
-#cur.close()
-
-#cnn.close()
-
-
 @tool
-def get_expenses(user_id:int ):
+async def get_expenses(user_id:int ):
     '''use this tools to get the expnce of user'''
 
-    cnn = connect_db()
+    cnn = await connect_db()
 
     cur = cnn.cursor()
    
-    cur.execute(
+    await cur.execute(
         '''
         select * from expenses where user_id = %s''',(user_id,)
     )
     
 
-    data = cur.fetchall()
+    data = await cur.fetchall()
 
-    cur.close()
+    await cur.close()
 
-    cnn.close()
+    await cnn.close()
 
     return data
     
 
 @tool
-def add_expenses(
+async def add_expenses(
     user_id:int,
     amount:int,
     category:str,
@@ -48,25 +36,25 @@ def add_expenses(
 Only use this when the user is recording a new purchase or spending.
 
 Do NOT use this for deleting or modifying existing expenses.'''
-    cnn = connect_db()
+    cnn = await connect_db()
     cur=cnn.cursor()
 
-    cur.execute(
+    await cur.execute(
         '''
     INSERT INTO expenses(user_id,amount,category,description)
     values (%s,%s,%s,%s)
 ''',(user_id,amount,category,description)
     )
-    cnn.commit()
-    cur.close()
-    cnn.close()
+    await cnn.commit()
+    await cur.close()
+    await cnn.close()
 
     return 'save the expence succesfully'
 
 
 
 @tool
-def update_expense(
+async def update_expense(
     user_id: int,
     expense_id: int,
     amount: int
@@ -78,10 +66,10 @@ def update_expense(
 
     the expense."""
 
-    cnn = connect_db()
+    cnn = await connect_db()
     cur = cnn.cursor()
 
-    cur.execute(
+    await cur.execute(
         """
         UPDATE expenses
         SET amount = %s
@@ -91,15 +79,15 @@ def update_expense(
         (amount, expense_id, user_id)
     )
 
-    cnn.commit()
+    await cnn.commit()
 
-    cur.close()
-    cnn.close()
+    await cur.close()
+    await cnn.close()
 
     return "Expense updated successfully"
 
 @tool
-def delete_expense(
+async def delete_expense(
     user_id: int,
     expense_id: int
 ):
@@ -110,10 +98,10 @@ def delete_expense(
 
     the expense."""
 
-    cnn = connect_db()
+    cnn = await connect_db()
     cur = cnn.cursor()
 
-    cur.execute(
+    await cur.execute(
         """
         DELETE FROM expenses
         WHERE id = %s
@@ -122,9 +110,9 @@ def delete_expense(
         (expense_id, user_id)
     )
 
-    cnn.commit()
+    await cnn.commit()
 
-    cur.close()
-    cnn.close()
+    await cur.close()
+    await cnn.close()
 
     return "Expense deleted successfully"
