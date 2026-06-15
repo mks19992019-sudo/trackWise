@@ -43,7 +43,11 @@ def add_expenses(
     category:str,
     description:str
 ):
-    '''use this tool to add the expence '''
+    '''Create a NEW expense.
+
+Only use this when the user is recording a new purchase or spending.
+
+Do NOT use this for deleting or modifying existing expenses.'''
     cnn = connect_db()
     cur=cnn.cursor()
 
@@ -61,3 +65,66 @@ def add_expenses(
 
 
 
+@tool
+def update_expense(
+    user_id: int,
+    expense_id: int,
+    amount: int
+):
+    """Update expense amount
+    If expense_id is unknown,
+
+    first use get_expenses to locate
+
+    the expense."""
+
+    cnn = connect_db()
+    cur = cnn.cursor()
+
+    cur.execute(
+        """
+        UPDATE expenses
+        SET amount = %s
+        WHERE id = %s
+        AND user_id = %s
+        """,
+        (amount, expense_id, user_id)
+    )
+
+    cnn.commit()
+
+    cur.close()
+    cnn.close()
+
+    return "Expense updated successfully"
+
+@tool
+def delete_expense(
+    user_id: int,
+    expense_id: int
+):
+    """Delete an expense
+    If expense_id is unknown,
+
+    first use get_expenses to locate
+
+    the expense."""
+
+    cnn = connect_db()
+    cur = cnn.cursor()
+
+    cur.execute(
+        """
+        DELETE FROM expenses
+        WHERE id = %s
+        AND user_id = %s
+        """,
+        (expense_id, user_id)
+    )
+
+    cnn.commit()
+
+    cur.close()
+    cnn.close()
+
+    return "Expense deleted successfully"
