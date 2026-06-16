@@ -1,0 +1,20 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dotenv>=0.9.9",
+    "fastapi>=0.137.1",
+    "fastapi-middleware>=0.2.1",
+    "google-auth>=2.55.0",
+    "jose>=1.0.0",
+    "jwt>=1.4.0",
+    "langchain>=0.2.5",
+    "langgraph>=1.2.5",
+    "langgraph-checkpoint>=4.1.1",
+    "langgraph-checkpoint-postgres>=3.1.0",
+    "psycopg>=3.3.4",
+    "python-jose>=3.5.0",
+]

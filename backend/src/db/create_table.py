@@ -9,8 +9,8 @@ async def create_tb():
     await cur.execute("""
     CREATE TABLE IF NOT EXISTS users(
                id SERIAL PRIMARY KEY,
-               email VARCHAR(200),
-               google_id VARCHAR(200),
+               email VARCHAR(200) UNIQUE not null,
+               google_id VARCHAR(200) UNIQUE not null,
                creted_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
             """)
     await cur.execute("""

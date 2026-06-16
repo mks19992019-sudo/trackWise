@@ -1,5 +1,4 @@
 from __future__ import annotations
-import asyncio
 from contextlib import asynccontextmanager
 from src.db.create_table import create_tb
 from fastapi import FastAPI, HTTPException
@@ -8,15 +7,9 @@ from src.routers.chat import chat_router
 from dotenv import load_dotenv
 from src.agents.graph import _initialize_resources , close_graph_resources
 
-
 load_dotenv()
 
-
-
-_cleanup_task: asyncio.Task | None = None
-
-
-
+ 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await create_tb()
@@ -26,7 +19,6 @@ async def lifespan(_: FastAPI):
     await close_graph_resources()
     print ("shuting down")
 
-   
 
 
 app = FastAPI(

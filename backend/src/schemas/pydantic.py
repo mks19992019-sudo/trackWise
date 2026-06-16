@@ -7,3 +7,7 @@ TrimmedText = Annotated[str, StringConstraints(strip_whitespace=True, min_length
 class ChatMessage(BaseModel):
     message: TrimmedText
     thread_id: TrimmedText
+
+
+class GoogleLoginRequest(BaseModel):
+    credential:str
