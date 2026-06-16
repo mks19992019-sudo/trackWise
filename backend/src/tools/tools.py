@@ -1,4 +1,4 @@
-from database import connect_db
+from src.db.database import connect_db
 from langchain.tools import tool
 
 @tool

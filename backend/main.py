@@ -1,30 +1,20 @@
 from __future__ import annotations
-
-
 import asyncio
 from contextlib import asynccontextmanager
-from create_table import create_tb
-from typing import Annotated
+from src.db.create_table import create_tb
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, ConfigDict, StringConstraints
-from graph import get_workflow
+from src.routers.chat import chat_router
 from dotenv import load_dotenv
-from graph import _initialize_resources , close_graph_resources
+from src.agents.graph import _initialize_resources , close_graph_resources
+
 
 load_dotenv()
 
-TrimmedText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+
 
 _cleanup_task: asyncio.Task | None = None
 
-
-class ChatMessage(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    message: TrimmedText
-    thread_id: TrimmedText
 
 
 @asynccontextmanager
@@ -60,25 +50,4 @@ async def home():
     return {"message": "Finance AI System is running"}
 
 
-@app.post("/chat")
-async def chat(payload: ChatMessage):
-    """Main chat endpoint - AI agent processes user messages"""
-    thread_id = payload.thread_id
-    user_message = payload.message
-    
-
-    workflow = await get_workflow()
-    result = await workflow.ainvoke(
-        {
-            "messages": [HumanMessage(content=user_message)],
-            "thread_id": thread_id,
-        },
-        {"configurable": {"thread_id": thread_id}},
-    )
-
-    response_messages = result.get("messages", [])
-
-    if not response_messages:
-        raise HTTPException(status_code=500, detail="Workflow returned no messages.")
-
-    return response_messages[-1].content
+app.include_router(chat_router)
