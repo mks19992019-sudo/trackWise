@@ -13,7 +13,7 @@ login_route = APIRouter()
 @login_route.post("/login")
 async def check_user(data:GoogleLoginRequest):
 
-    google_data = verify_google_token(data.credential)
+    google_data = await verify_google_token(data.credential)
     google_id = google_data['sub']
     email = google_data['email']
 
@@ -21,7 +21,7 @@ async def check_user(data:GoogleLoginRequest):
     if not user:
         user = await create_user(email=email,google_id=google_id)
 
-    token = await create_access_token(user['id'])
+    token =  create_access_token(user['id'])
 
     return token
 

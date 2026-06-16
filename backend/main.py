@@ -7,13 +7,18 @@ from src.routers.chat import chat_router
 from dotenv import load_dotenv
 from src.agents.graph import _initialize_resources , close_graph_resources
 
+
+
 load_dotenv()
+
 
  
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await create_tb()
     await _initialize_resources()
+
+
 
     yield
     await close_graph_resources()
