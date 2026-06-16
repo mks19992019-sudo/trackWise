@@ -6,17 +6,19 @@ async def get_user(google_id:str):
     cur = conn.cursor()
 
     await cur.execute("""
-    SELECT * FROM USERS 
+    SELECT id FROM USERS 
     WHERE google_id = %s
 
-""")(google_id,)
+""",(google_id,));
     
-    data = await cur.fetchall()
+    data = await cur.fetchone()
 
     await cur.close()
     await conn.close()
 
-    return data
+    return {
+        'id':data[0]
+    }
 
     
     

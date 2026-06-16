@@ -21,7 +21,11 @@ async def check_user(data:GoogleLoginRequest):
     if not user:
         user = await create_user(email=email,google_id=google_id)
 
-    token = await create_access_token(user[user_id])
+    token = await create_access_token(user['id'])
+
+    return token
+
+
     
 
 
